@@ -1,0 +1,70 @@
+#!/bin/bash
+echo "Sys Info"
+uname -a
+echo "Disk Space"
+df -h
+echo "Memory Usage"
+free -m
+------------------------------------
+#!/bin/bash
+for test in tests/ *.sh; do [tests=>test1.sh, test2.sh]
+	bash "$test"
+	if [ $? -ne 0 ]; then
+		echo "Tests failed"
+	else
+		echo "Tests passed"
+	fi
+done
+------------------------------------
+#!/bin/bash
+echo "Deploying application"
+scp -r ./app selcia@192.168.119.129:/home/selcia
+if [ $? -eq 0 ]; then
+	echo "Deployment successful"
+else
+	echo "Not successful"
+	exit 1
+fi
+------------------------------------
+#!/bin/bash
+echo "Backing up"
+tar -czf ./backup/$(date +%F).tar.gz ./app
+if [ $? -eq 0 ]; then
+	echo "File compressed"
+else
+	echo "Not compressed"
+	exit 1
+fi
+------------------------------------
+#!/bin/bash
+
+tar -czvf data.tar.gz /home/selcia/Desktop/fs-lab/app
+
+LOCAL_DIR="/home/selcia/Desktop/fs-lab/data.tar.gz"
+REMOTE_USER="selcia"
+REMOTE_HOST="192.168.119.132"
+REMOTE_DIR="/home/selcia"
+
+echo "Starting data transfer from local server to remote server"
+scp -r "$LOCAL_DIR" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_DIR"
+
+
+if [ $? -eq 0 ]; then
+    echo "Data transfer completed successfully!"
+else
+    echo "Error during data transfer. Please check the logs for details."
+    exit 1
+fi
+
+echo "Extracting $LOCAL_DIR on the remote server..."
+REMOTE_FILE="$REMOTE_DIR/$(basename $LOCAL_DIR)" 
+echo "Extracting $(basename $LOCAL_DIR) on the remote server..."
+ssh "$REMOTE_USER@$REMOTE_HOST" "tar -xzvf $REMOTE_FILE -C $REMOTE_DIR"
+
+# Check if extraction was successful
+if [ $? -eq 0 ]; then
+    echo "File extracted successfully on the remote server!"
+else
+    echo "File extraction failed. Please check the logs."
+    exit 1
+fi
